@@ -28,31 +28,30 @@ const generateAccessAndRefreshTokens = async (email) => {
     return { accessToken };
 };
 const RegisterUser = asyncHandler(async (req, res) => {
-    const image = req.file;
 
-    if (!image) {
-        throw new ApiError(400, "Image is required");
-    }
 
-    const parsedData = userSchema.safeParse(req.body);
-    if (!parsedData.success) {
-        const errorMessages = parsedData.error.issues.map(issue => issue.message).join(", ");
-        throw new ApiError(400, errorMessages);
-    }
 
-    const { email, password } = parsedData.data;
+    // const parsedData = userSchema.safeParse(req.body);
+    // console.log(parsedData);
+    // if (!parsedData.success) {
+    //     const errorMessages = parsedData.error.issues.map(issue => issue.message).join(", ");
+    //     console.log(errorMessages);
+    //     throw new ApiError(400, errorMessages);
+    // }
+    console.log(req.body)
+    const { email, password } = req.body
+
 
     const userExists = await User.findOne({ where: { email } });
     if (userExists) {
         throw new ApiError(401, "User already exists");
     }
 
-    const savedImagePath = `/images/${image.filename}`;
 
     const user = await User.create({
         email,
         password,
-        profile_image: savedImagePath,
+        profile_image: "No image",
     });
 
     if (!user) {
@@ -101,6 +100,7 @@ const loginUser = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, { user, accessToken }, "User logged in successfully"));
 });
 const testing = asyncHandler(async (req, res) => {
+    console.log('this is testing')
     return res.status(200).json(new ApiResponse(200, 'testing is working', "API working successfully"));
 });
 const GetCurrentUser = asyncHandler(async (req, res) => {

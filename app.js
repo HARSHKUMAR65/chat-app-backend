@@ -12,12 +12,14 @@ dotenv.config({ path: './.env' });
 const app = express();
 const server = http.createServer(app);
 
+
 const io = new Server(server, {
-  cors: {
-    origin: '*',
-    credentials: true
-  }
-});
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST' , 'DELETE']
+    }
+})
+
 
 io.on('connection', (socket) => {
   console.log(' New client connected:', socket.id);
@@ -32,12 +34,13 @@ io.on('connection', (socket) => {
   });
 });
 
+
 app.use(cors({
-  origin: '*', 
-  allowedHeaders: 'X-Requested-With, Content-Type, Authorization, Origin, Accept',
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+    origin: '*', 
+    allowedHeaders: 'X-Requested-With, Content-Type, Authorization, Origin, Accept',
+    credentials: true,
+    "preflightContinue": false,
+    "optionsSuccessStatus": 204
 }));
 
 app.use(express.json({ limit: "16kb" }));
@@ -48,3 +51,5 @@ app.use('/images', express.static('public/images'));
 app.use('/api', router);
 
 export { app, server, io };
+
+
