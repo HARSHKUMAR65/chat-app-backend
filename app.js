@@ -21,10 +21,22 @@ const io = new Server(server, {
 })
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
+
+  // 1️⃣ Join room (user ID)
   socket.on('join', (userId) => {
     socket.join(String(userId));
-    console.log(`User ${userId} joined room ${userId}`);
+    console.log(`User ${userId} joined room`);
   });
+
+  // 2️⃣ Receive send_message event from client
+  socket.on('send_message', (message) => {
+    const { receiver_id } = message;
+
+    // Send to receiver’s room
+    io.to(String(receiver_id)).emit('receive_message', message);
+    console.log(`Forwarded message to user ${receiver_id}`);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
