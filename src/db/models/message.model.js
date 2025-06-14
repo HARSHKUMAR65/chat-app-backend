@@ -1,5 +1,6 @@
 import { sequelize } from '../Database.js';
 import { DataTypes } from 'sequelize';
+import { User } from './user.modal.js'; 
 
 const Message = sequelize.define('messages', {
   id: {
@@ -28,5 +29,7 @@ const Message = sequelize.define('messages', {
   underscored: true,
   tableName: 'messages',
 });
+Message.belongsTo(User, { as: 'sender', foreignKey: 'sender_id' });
+Message.belongsTo(User, { as: 'receiver', foreignKey: 'receiver_id' });
 
 export { Message };

@@ -19,22 +19,16 @@ const io = new Server(server, {
         methods: ['GET', 'POST' , 'DELETE']
     }
 })
-
-
 io.on('connection', (socket) => {
-  console.log(' New client connected:', socket.id);
-
-  socket.on('message', (data) => {
-    console.log('Message from client:', data);
-    socket.emit('message', 'Hello from server!');
+  console.log('Client connected:', socket.id);
+  socket.on('join', (userId) => {
+    socket.join(String(userId));
+    console.log(`User ${userId} joined room ${userId}`);
   });
-
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
 });
-
-
 app.use(cors({
     origin: '*', 
     allowedHeaders: 'X-Requested-With, Content-Type, Authorization, Origin, Accept',
@@ -42,7 +36,6 @@ app.use(cors({
     "preflightContinue": false,
     "optionsSuccessStatus": 204
 }));
-
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: '16kb' }));
 app.use(cookieParser());

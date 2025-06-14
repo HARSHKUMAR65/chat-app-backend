@@ -71,25 +71,22 @@ const RegisterUser = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, { user, accessToken }, "User registered successfully"));
 });
 const loginUser = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
 
+    const { email, password } = req.body;
     if (!email || !password) {
         throw new ApiError(400, "Email and password are required");
     }
-
     const user = await User.findOne({ where: { email } });
     if (!user) {
         throw new ApiError(404, "User not found");
     }
-
     const isPasswordCorrect = await user.isPasswordCorrect(password);
     if (!isPasswordCorrect) {
         throw new ApiError(401, "Invalid credentials");
     }
-
     const { accessToken } = await generateAccessAndRefreshTokens(user.email);
 
-    const options = {
+    const options = {  
         httpOnly: true,
         secure: true,
     };

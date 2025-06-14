@@ -4,8 +4,9 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Message } from "../db/models/message.model.js";
 import { io } from "../../app.js";
 import { Op, Sequelize } from 'sequelize';
+import { User } from "../db/models/user.modal.js";
 
-/**
+/*
  * Send a new message and broadcast it via socket.io
  */
 const sendMessage = asyncHandler(async (req, res) => {
@@ -22,15 +23,16 @@ const sendMessage = asyncHandler(async (req, res) => {
     timestamp: new Date()
   });
 
-  // Emit real-time update
-  io.emit('newMessage', message);
+  // Emit to specific rooms (sender and receiver)
+  io.to(String(sender_id)).emit('new_message', message);
+  io.to(String(receiver_id)).emit('new_message', message);
 
   return res.status(201).json(
     new ApiResponse(201, message, "Message sent successfully")
   );
 });
 
-/**
+/*
  * Get all messages between two users (chat history)
  */
 const getMessages = asyncHandler(async (req, res) => {
@@ -47,21 +49,31 @@ const getMessages = asyncHandler(async (req, res) => {
         { sender_id: receiver_id, receiver_id: sender_id }
       ]
     },
-    order: [['timestamp', 'ASC']]
+    order: [['timestamp', 'ASC']],
+    include: [
+      {
+        model: User,
+        as: 'sender',
+        attributes: ['id', 'email', 'profile_image'],
+      },
+      {
+        model: User,
+        as: 'receiver',
+        attributes: ['id', 'email', 'profile_image'],
+      }
+    ]
+
   });
 
   return res.status(200).json(
     new ApiResponse(200, messages, "Chat history fetched successfully")
   );
 });
-
-/**
+/*
  * Get the last message for each unique conversation involving the current user
  */
 const getAllMessagesLastMessage = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-
-  // Step 1: Get conversation list with latest timestamps
   const latestPerConversation = await Message.findAll({
     where: {
       [Op.or]: [
@@ -80,7 +92,6 @@ const getAllMessagesLastMessage = asyncHandler(async (req, res) => {
     raw: true,
   });
 
-  // Step 2: Get actual messages
   const lastMessages = await Promise.all(
     latestPerConversation.map(async ({ conversation_with, last_timestamp }) => {
       return await Message.findOne({
@@ -91,7 +102,19 @@ const getAllMessagesLastMessage = asyncHandler(async (req, res) => {
           ],
           timestamp: last_timestamp
         },
-        order: [['timestamp', 'DESC']]
+        order: [['timestamp', 'DESC']],
+        include: [
+      {
+        model: User,
+        as: 'sender',
+        attributes: ['id', 'email', 'profile_image'],
+      },
+      {
+        model: User,
+        as: 'receiver',
+        attributes: ['id', 'email', 'profile_image'],
+      }
+    ]
       });
     })
   );
