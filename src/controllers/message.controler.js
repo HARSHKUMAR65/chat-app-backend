@@ -23,12 +23,21 @@ const sendMessage = asyncHandler(async (req, res) => {
     timestamp: new Date()
   });
 
-  // Emit to specific rooms (sender and receiver)
-  io.to(String(sender_id)).emit('new_message', message);
-  io.to(String(receiver_id)).emit('new_message', message);
+  // Fetch message with sender & receiver details
+  const fullMessage = await Message.findOne({
+    where: { id: message.id },
+    include: [
+      { model: User, as: 'sender', attributes: ['id', 'email', 'profile_image'] },
+      { model: User, as: 'receiver', attributes: ['id', 'email', 'profile_image'] }
+    ]
+  });
+
+  // Emit to both rooms: sender and receiver
+  io.to(String(sender_id)).emit('receive_message', fullMessage);
+  io.to(String(receiver_id)).emit('receive_message', fullMessage);
 
   return res.status(201).json(
-    new ApiResponse(201, message, "Message sent successfully")
+    new ApiResponse(201, fullMessage, "Message sent successfully")
   );
 });
 
@@ -62,18 +71,19 @@ const getMessages = asyncHandler(async (req, res) => {
         attributes: ['id', 'email', 'profile_image'],
       }
     ]
-
   });
 
   return res.status(200).json(
     new ApiResponse(200, messages, "Chat history fetched successfully")
   );
 });
+
 /*
  * Get the last message for each unique conversation involving the current user
  */
 const getAllMessagesLastMessage = asyncHandler(async (req, res) => {
   const userId = req.user.id;
+
   const latestPerConversation = await Message.findAll({
     where: {
       [Op.or]: [
@@ -104,23 +114,15 @@ const getAllMessagesLastMessage = asyncHandler(async (req, res) => {
         },
         order: [['timestamp', 'DESC']],
         include: [
-      {
-        model: User,
-        as: 'sender',
-        attributes: ['id', 'email', 'profile_image'],
-      },
-      {
-        model: User,
-        as: 'receiver',
-        attributes: ['id', 'email', 'profile_image'],
-      }
-    ]
+          { model: User, as: 'sender', attributes: ['id', 'email', 'profile_image'] },
+          { model: User, as: 'receiver', attributes: ['id', 'email', 'profile_image'] }
+        ]
       });
     })
   );
 
   return res.status(200).json(
-    new ApiResponse(200, lastMessages, "Last messages per conversation fetched successfully")
+    new ApiResponse(200, lastMessages.filter(Boolean), "Last messages per conversation fetched successfully")
   );
 });
 

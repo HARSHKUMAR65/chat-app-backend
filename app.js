@@ -14,39 +14,49 @@ const server = http.createServer(app);
 
 
 const io = new Server(server, {
-    cors: {
-        origin: '*',
-        methods: ['GET', 'POST' , 'DELETE']
-    }
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST', 'DELETE']
+  }
 })
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+  console.log('✅ Client connected:', socket.id);
 
-  // 1️⃣ Join room (user ID)
-  socket.on('join', (userId) => {
+  socket.on('join_chat', ({ userId, partnerId }) => {
     socket.join(String(userId));
-    console.log(`User ${userId} joined room`);
+    socket.join(`${userId}-${partnerId}`);
+    socket.join(`${partnerId}-${userId}`);
+    console.log(`🧑 User ${userId} joined rooms: ${userId}, ${userId}-${partnerId}`);
   });
 
-  // 2️⃣ Receive send_message event from client
   socket.on('send_message', (message) => {
-    const { receiver_id } = message;
+    const { sender_id, receiver_id } = message;
 
-    // Send to receiver’s room
+    // Emit real-time to both users
+    io.to(String(sender_id)).emit('receive_message', message);
     io.to(String(receiver_id)).emit('receive_message', message);
-    console.log(`Forwarded message to user ${receiver_id}`);
+    io.to(`${sender_id}-${receiver_id}`).emit('receive_message', message);
+    io.to(`${receiver_id}-${sender_id}`).emit('receive_message', message);
+  });
+
+  socket.on('leave_chat', ({ userId, partnerId }) => {
+    socket.leave(String(userId));
+    socket.leave(`${userId}-${partnerId}`);
+    socket.leave(`${partnerId}-${userId}`);
+    console.log(`🚪 User ${userId} left rooms`);
   });
 
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+    console.log('❌ Client disconnected:', socket.id);
   });
 });
+
 app.use(cors({
-    origin: '*', 
-    allowedHeaders: 'X-Requested-With, Content-Type, Authorization, Origin, Accept',
-    credentials: true,
-    "preflightContinue": false,
-    "optionsSuccessStatus": 204
+  origin: '*',
+  allowedHeaders: 'X-Requested-With, Content-Type, Authorization, Origin, Accept',
+  credentials: true,
+  "preflightContinue": false,
+  "optionsSuccessStatus": 204
 }));
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: '16kb' }));
