@@ -5,25 +5,17 @@ import { Message } from "../db/models/message.model.js";
 import { io } from "../../app.js";
 import { Op, Sequelize } from 'sequelize';
 import { User } from "../db/models/user.modal.js";
-
-/*
- * Send a new message and broadcast it via socket.io
- */
 const sendMessage = asyncHandler(async (req, res) => {
   const { sender_id, receiver_id, text } = req.body;
-
   if (!sender_id || !receiver_id || !text) {
     throw new ApiError(400, "sender_id, receiver_id, and text are required");
   }
-
   const message = await Message.create({
     sender_id,
     receiver_id,
     text,
     timestamp: new Date()
   });
-
-  // Fetch message with sender & receiver details
   const fullMessage = await Message.findOne({
     where: { id: message.id },
     include: [
@@ -31,8 +23,6 @@ const sendMessage = asyncHandler(async (req, res) => {
       { model: User, as: 'receiver', attributes: ['id', 'email', 'profile_image'] }
     ]
   });
-
-  // Emit to both rooms: sender and receiver
   io.to(String(sender_id)).emit('receive_message', fullMessage);
   io.to(String(receiver_id)).emit('receive_message', fullMessage);
 
@@ -40,10 +30,6 @@ const sendMessage = asyncHandler(async (req, res) => {
     new ApiResponse(201, fullMessage, "Message sent successfully")
   );
 });
-
-/*
- * Get all messages between two users (chat history)
- */
 const getMessages = asyncHandler(async (req, res) => {
   const { sender_id, receiver_id } = req.query;
 
@@ -72,15 +58,11 @@ const getMessages = asyncHandler(async (req, res) => {
       }
     ]
   });
-
+  io.emit
   return res.status(200).json(
     new ApiResponse(200, messages, "Chat history fetched successfully")
   );
 });
-
-/*
- * Get the last message for each unique conversation involving the current user
- */
 const getAllMessagesLastMessage = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 

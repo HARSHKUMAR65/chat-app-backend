@@ -12,8 +12,8 @@ router.route("/login").post(loginUser);
 router.route("/testing").get(testing);
 router.route("/current-user").get(verifyJwtUser, GetCurrentUser);
 
-router.route("/message").post(verifyJwtUser, sendMessage);
-router.route("/messages").get(verifyJwtUser, getMessages);
+router.route("/message").post( sendMessage);
+router.route("/messages").get( getMessages);
 router.route("/last-messages").get(verifyJwtUser, getAllMessagesLastMessage);
 
 

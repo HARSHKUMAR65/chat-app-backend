@@ -71,7 +71,7 @@ const loginUser = asyncHandler(async (req, res) => {
     }
     const { accessToken } = await generateAccessAndRefreshTokens(user.email);
 
-    const options = {  
+    const options = {
         httpOnly: true,
         secure: true,
     };
