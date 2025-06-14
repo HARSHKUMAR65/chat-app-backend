@@ -28,26 +28,11 @@ const generateAccessAndRefreshTokens = async (email) => {
     return { accessToken };
 };
 const RegisterUser = asyncHandler(async (req, res) => {
-
-
-
-    // const parsedData = userSchema.safeParse(req.body);
-    // console.log(parsedData);
-    // if (!parsedData.success) {
-    //     const errorMessages = parsedData.error.issues.map(issue => issue.message).join(", ");
-    //     console.log(errorMessages);
-    //     throw new ApiError(400, errorMessages);
-    // }
-    console.log(req.body)
-    const { email, password } = req.body
-
-
+    const { email, password } = req.body;
     const userExists = await User.findOne({ where: { email } });
     if (userExists) {
         throw new ApiError(401, "User already exists");
     }
-
-
     const user = await User.create({
         email,
         password,
